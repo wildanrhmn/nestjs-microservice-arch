@@ -16,8 +16,7 @@ import { JwtStrategy } from './jwt.strategy';
       }),
       inject: [ConfigService],
     }),
-
-    SharedModule,
+    SharedModule.registerRmq('MAIL_SERVICE', process.env.RABBITMQ_MAIL_QUEUE),
     PostgresDBModule,
 
     TypeOrmModule.forFeature([

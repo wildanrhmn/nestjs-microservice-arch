@@ -13,6 +13,7 @@ import { NewUserDTO } from './dtos/new-user.dto';
 import { ExistingUserDTO } from './dtos/existing-user.dto';
 import { JwtGuard } from './jwt.guard';
 
+
 @Controller()
 export class AuthController {
   constructor(
@@ -41,7 +42,6 @@ export class AuthController {
 
   @MessagePattern({ cmd: 'register' })
   async register(@Ctx() context: RmqContext, @Payload() newUser: NewUserDTO) {
-    console.info(newUser)
     this.sharedService.acknowledgeMessage(context);
     return this.authService.register(newUser);
   }
