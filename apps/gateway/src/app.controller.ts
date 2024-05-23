@@ -20,6 +20,7 @@ export class AppController {
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
   ) {}
 
+  @UseGuards(AuthGuard)
   @Get('')
   async hello() {
     return 'Welcome to chativo-api!';

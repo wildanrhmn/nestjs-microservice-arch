@@ -14,6 +14,8 @@ import {
   UserRepositoryInterface,
 } from '@app/shared';
 
+import { crypt, decrypt } from './auth.utils';
+
 import { ExistingUserDTO } from './dtos/existing-user.dto';
 import { NewUserDTO } from './dtos/new-user.dto';
 import { AuthServiceInterface } from './interfaces/auth.service.interface';
@@ -46,7 +48,7 @@ export class AuthService implements AuthServiceInterface {
   }
 
   async hashPassword(password: string): Promise<string> {
-    return 'hashed';
+    return crypt(password);
   }
 
   async register(newUser: Readonly<NewUserDTO>): Promise<UserEntity> {
@@ -59,14 +61,14 @@ export class AuthService implements AuthServiceInterface {
     }
 
     const id = uuid();
-    // const hashedPassword = await this.hashPassword(password);
+    const hashedPassword = await this.hashPassword(password);
 
     const savedUser = await this.usersRepository.save({
       id: id,
       name,
       phone,
       email,
-      password,
+      password: hashedPassword,
     });
 
     delete savedUser.password;
@@ -77,7 +79,7 @@ export class AuthService implements AuthServiceInterface {
     password: string,
     hashedPassword: string,
   ): Promise<boolean> {
-    return true;
+    return password === decrypt(hashedPassword);
   }
 
   async validateUser(email: string, password: string): Promise<UserEntity> {
