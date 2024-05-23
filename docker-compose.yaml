@@ -40,12 +40,25 @@ services:
       - .env
     depends_on:
       - rabbitmq
-      - mailer
       - auth
     volumes:
       - .:/usr/src/app # any change to base folder should be reflected
       - /usr/src/app/node_modules
     command: npm run start:dev api    
+
+  mailer:
+    build:
+      context: ./
+      dockerfile: ./apps/mailer/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      # - postgres
+    volumes:
+      - .:/usr/src/app # any change to base folder should be reflected
+      - /usr/src/app/node_modules
+    command: npm run start:dev mailer # overrides CMD from dockerfile
 
   auth:
     build:
@@ -61,17 +74,3 @@ services:
       - .:/usr/src/app # any change to base folder should be reflected
       - /usr/src/app/node_modules
     command: npm run start:dev auth # overrides CMD from dockerfile
-    
-  mailer:
-    build:
-      context: ./
-      dockerfile: ./apps/mailer/Dockerfile
-    env_file:
-      - .env
-    depends_on:
-      - rabbitmq
-      # - postgres
-    volumes:
-      - .:/usr/src/app # any change to base folder should be reflected
-      - /usr/src/app/node_modules
-    command: npm run start:dev mailer # overrides CMD from dockerfile

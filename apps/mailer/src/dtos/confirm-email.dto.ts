@@ -1,6 +1,5 @@
-import { UserEntity } from "@app/shared";
-
 export class ConfirmEmailDTO {
-    user: UserEntity;
+    name: string;
+    email: string;
     token: string;
 }

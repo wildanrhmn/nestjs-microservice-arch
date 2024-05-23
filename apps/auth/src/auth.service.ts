@@ -5,9 +5,9 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { v4 as uuid } from 'uuid';
-import { ClientProxy } from '@nestjs/microservices';
 import {
   UserEntity,
   UserJwt,
@@ -25,8 +25,9 @@ export class AuthService implements AuthServiceInterface {
   constructor(
     @Inject('UsersRepositoryInterface')
     private readonly usersRepository: UserRepositoryInterface,
-    @Inject('MAIL_SERVICE')
+    @Inject('MAIL_SERVICE') 
     private readonly mailerService: ClientProxy,
+
     private readonly jwtService: JwtService,
   ) { }
 
@@ -73,14 +74,17 @@ export class AuthService implements AuthServiceInterface {
       password: hashedPassword,
     });
 
-    const mailPayload = {
-      user: savedUser,
-      token: uuid(),
+    if (!savedUser) {
+      throw new BadRequestException('Could not save user');
     }
-
-    this.mailerService.send({ cmd: 'send-email' }, {
-      ...mailPayload
-    });
+  
+    this.mailerService.send({
+      cmd: 'send-email'
+    }, {  
+      name: savedUser.name,
+      email: savedUser.email,
+      token: uuid(),
+    }).subscribe();
 
     delete savedUser.password;
     return savedUser;

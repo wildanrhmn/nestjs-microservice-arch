@@ -4,6 +4,7 @@ import {
   MessagePattern,
   Payload,
   RmqContext,
+  ClientProxy
 } from '@nestjs/microservices';
 
 import { SharedService } from '@app/shared';
@@ -21,6 +22,8 @@ export class AuthController {
     private readonly authService: AuthService,
     @Inject('SharedServiceInterface')
     private readonly sharedService: SharedService,
+    @Inject('MAIL_SERVICE')
+    private readonly mailerService: ClientProxy,
   ) {}
 
   @MessagePattern({ cmd: 'get-users' })

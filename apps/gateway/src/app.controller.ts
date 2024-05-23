@@ -18,7 +18,6 @@ import { AuthGuard, UserInterceptor, UserRequest } from '@app/shared';
 export class AppController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
-    @Inject('MAIL_SERVICE') private readonly mailerService: ClientProxy,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -32,16 +31,6 @@ export class AppController {
     return this.authService.send(
       {
         cmd: 'get-users',
-      },
-      {},
-    );
-  }
-
-  @Get('mailer')
-  async getMailer() {
-    return this.mailerService.send(
-      {
-        cmd: 'get-mailer',
       },
       {},
     );

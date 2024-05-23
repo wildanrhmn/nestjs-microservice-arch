@@ -43,6 +43,10 @@
       "entryFile": "main",
       "sourceRoot": "apps/mailer/src",
       "compilerOptions": {
+        "assets": [{
+          "include": "templates/**/*", "outDir": "./dist/apps/mailer"
+        }],
+        "watchAssets": true,
         "tsConfigPath": "apps/mailer/tsconfig.app.json"
       }
     }

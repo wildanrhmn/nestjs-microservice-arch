@@ -25,7 +25,7 @@ import { SharedModule, SharedService } from '@app/shared';
           from: configService.get('SMTP_FROM'),
         },
         template: {
-          dir: join(__dirname, './templates'),
+          dir:join(__dirname, 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
@@ -37,7 +37,10 @@ import { SharedModule, SharedService } from '@app/shared';
   ],
   controllers: [MailerController],
   providers: [
-    MailService,
+    {
+      provide: 'MailerServiceInterface',
+      useClass: MailService,
+    },
     {
       provide: 'SharedServiceInterface',
       useClass: SharedService,
