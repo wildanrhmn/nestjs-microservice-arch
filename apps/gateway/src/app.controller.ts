@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -18,9 +19,8 @@ import { AuthGuard, UserInterceptor, UserRequest } from '@app/shared';
 export class AppController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
-  ) {}
+  ) { }
 
-  @UseGuards(AuthGuard)
   @Get('')
   async hello() {
     return 'Welcome to chativo-api!';
@@ -34,6 +34,16 @@ export class AppController {
       },
       {},
     );
+  }
+
+  @Post('auth/verify')
+  async verifyEmail(
+    @Query('token') token: string,
+  ) {
+    return this.authService.send(
+      { cmd: 'verify-email' },
+      token
+    )
   }
 
   @Post('auth/register')

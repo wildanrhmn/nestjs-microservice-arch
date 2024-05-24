@@ -8,46 +8,44 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { v4 as uuid } from 'uuid';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import {
   UserEntity,
   UserJwt,
-  UserRepositoryInterface,
 } from '@app/shared';
 
 import { crypt, decrypt } from './auth.utils';
 
 import { ExistingUserDTO } from './dtos/existing-user.dto';
 import { NewUserDTO } from './dtos/new-user.dto';
-import { AuthServiceInterface } from './interfaces/auth.service.interface';
 
 @Injectable()
-export class AuthService implements AuthServiceInterface {
+export class AuthService {
   constructor(
-    @Inject('UsersRepositoryInterface')
-    private readonly usersRepository: UserRepositoryInterface,
-    @Inject('MAIL_SERVICE') 
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
+    @Inject('MAIL_SERVICE')
     private readonly mailerService: ClientProxy,
 
     private readonly jwtService: JwtService,
   ) { }
 
   async getUsers(): Promise<UserEntity[]> {
-    return await this.usersRepository.findAll();
+    return await this.usersRepository.find();
   }
 
-  async getUserById(id: number): Promise<UserEntity> {
-    return await this.usersRepository.findOneById(id);
-  }
-
-  async findByEmail(email: string): Promise<UserEntity> {
-    return this.usersRepository.findByCondition({
-      where: { email },
-      select: ['id', 'name', 'email', 'password'],
+  async getUserById(id: string): Promise<UserEntity> {
+    return await this.usersRepository.findOne({
+      where: { id },
     });
   }
 
-  async findById(id: number): Promise<UserEntity> {
-    return this.usersRepository.findOneById(id);
+  async findByEmail(email: string): Promise<UserEntity> {
+    return this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'name', 'email', 'password'],
+    })
   }
 
   async hashPassword(password: string): Promise<string> {
@@ -77,16 +75,17 @@ export class AuthService implements AuthServiceInterface {
     if (!savedUser) {
       throw new BadRequestException('Could not save user');
     }
-  
+    delete savedUser.password;
+    const jwt = await this.jwtService.signAsync({ user: savedUser });
     this.mailerService.send({
       cmd: 'send-email'
-    }, {  
+    }, {
       name: savedUser.name,
       email: savedUser.email,
-      token: uuid(),
+      token: jwt,
     }).subscribe();
 
-    delete savedUser.password;
+
     return savedUser;
   }
 
@@ -112,6 +111,17 @@ export class AuthService implements AuthServiceInterface {
     if (!doesPasswordMatch) return null;
 
     return user;
+  }
+
+  async verifyEmail(token: string) {
+    const { user } = await this.verifyJwt(token);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    await this.usersRepository.update(user.id, { isActive: true });
+    return {
+      message: 'Email verified.',
+    };
   }
 
   async login(existingUser: Readonly<ExistingUserDTO>) {

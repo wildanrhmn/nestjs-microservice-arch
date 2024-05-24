@@ -5,7 +5,7 @@ import { ConfirmEmailDTO } from './dtos/confirm-email.dto';
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
   async sendEmail(data: ConfirmEmailDTO) {
-    const url = `http://localhost:4000/auth/confirm?token=${data.token}`;
+    const url = `http://localhost:4000/auth/verify?token=${data.token}`;
     
     await this.mailerService.sendMail({
       to: data.email,

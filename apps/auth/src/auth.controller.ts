@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Inject } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import {
   Ctx,
   MessagePattern,
@@ -18,12 +18,8 @@ import { JwtGuard } from './jwt.guard';
 @Controller()
 export class AuthController {
   constructor(
-    @Inject('AuthServiceInterface')
     private readonly authService: AuthService,
-    @Inject('SharedServiceInterface')
     private readonly sharedService: SharedService,
-    @Inject('MAIL_SERVICE')
-    private readonly mailerService: ClientProxy,
   ) {}
 
   @MessagePattern({ cmd: 'get-users' })
@@ -36,7 +32,7 @@ export class AuthController {
   @MessagePattern({ cmd: 'get-user' })
   async getUserById(
     @Ctx() context: RmqContext,
-    @Payload() user: { id: number },
+    @Payload() user: { id: string },
   ) {
     this.sharedService.acknowledgeMessage(context);
 
@@ -47,6 +43,12 @@ export class AuthController {
   async register(@Ctx() context: RmqContext, @Payload() newUser: NewUserDTO) {
     this.sharedService.acknowledgeMessage(context);
     return this.authService.register(newUser);
+  }
+
+  @MessagePattern({ cmd: 'verify-email' })
+  async verifyEmail(@Ctx() context: RmqContext, @Payload() token: string) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.verifyEmail(token);
   }
 
   @MessagePattern({ cmd: 'login' })
