@@ -1,11 +1,10 @@
 import {
-  ConflictException,
   Injectable,
   Inject,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { v4 as uuid } from 'uuid';
 import { Repository } from 'typeorm';
@@ -31,17 +30,46 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) { }
 
-  async getUsers(): Promise<UserEntity[]> {
-    return await this.usersRepository.find();
-  }
-
-  async getUserById(id: string): Promise<UserEntity> {
-    return await this.usersRepository.findOne({
-      where: { id },
+  async getUsers(page: number = 1, limit: number = 5) {
+    const [users, totalItem] = await this.usersRepository.findAndCount({
+      select: ['id', 'name', 'email', 'isActive', 'createdAt', 'updatedAt'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+
+    return {
+      message: 'Users retrieved successfully',
+      result: users,
+      meta: {
+        totalItems: totalItem,
+        itemCount: users.length,
+        itemsPerPage: limit,
+        totalPages: Math.ceil(totalItem / limit),
+        currentPage: page,
+      }
+    }
   }
 
-  async findByEmail(email: string): Promise<UserEntity> {
+  async getUserById(id: string) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      select: ['id', 'name', 'email', 'isActive', 'createdAt', 'updatedAt'],
+    });
+
+    if (!user) {
+      throw new RpcException({
+        message: 'User not found',
+        statusCode: 404,
+      });
+    }
+
+    return {
+      message: 'User retrieved successfully',
+      result: user,
+    }
+  }
+
+  async findByEmail(email: string) {
     return this.usersRepository.findOne({
       where: { email },
       select: ['id', 'name', 'email', 'password'],
@@ -52,13 +80,16 @@ export class AuthService {
     return crypt(password);
   }
 
-  async register(newUser: Readonly<NewUserDTO>): Promise<UserEntity> {
+  async register(newUser: Readonly<NewUserDTO>) {
     const { name, email, password, phone } = newUser;
 
     const existingUser = await this.findByEmail(email);
 
     if (existingUser) {
-      throw new ConflictException('An account with that email already exists!');
+      throw new RpcException({
+        message: 'An account with that email already exists!',
+        statusCode: 409,
+      });
     }
 
     const id = uuid();
@@ -73,7 +104,10 @@ export class AuthService {
     });
 
     if (!savedUser) {
-      throw new BadRequestException('Could not save user');
+      throw new RpcException({
+        message: 'Could not save user',
+        statusCode: 400,
+      });
     }
     delete savedUser.password;
     const jwt = await this.jwtService.signAsync({ user: savedUser });
@@ -86,7 +120,10 @@ export class AuthService {
     }).subscribe();
 
 
-    return savedUser;
+    return {
+      message: 'User created',
+      result: savedUser,
+    };
   }
 
   async doesPasswordMatch(
@@ -96,7 +133,7 @@ export class AuthService {
     return password === decrypt(hashedPassword);
   }
 
-  async validateUser(email: string, password: string): Promise<UserEntity> {
+  async validateUser(email: string, password: string) {
     const user = await this.findByEmail(email);
 
     const doesUserExist = !!user;
@@ -115,9 +152,14 @@ export class AuthService {
 
   async verifyEmail(token: string) {
     const { user } = await this.verifyJwt(token);
+
     if (!user) {
-      throw new UnauthorizedException();
+      throw new RpcException({
+        message: 'Invalid token',
+        statusCode: 401,
+      });
     }
+
     await this.usersRepository.update(user.id, { isActive: true });
     return {
       message: 'Email verified.',
@@ -129,26 +171,41 @@ export class AuthService {
     const user = await this.validateUser(email, password);
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new RpcException({
+        message: 'Invalid credentials',
+        statusCode: 401,
+      });
     }
 
     delete user.password;
 
     const jwt = await this.jwtService.signAsync({ user });
 
-    return { token: jwt, user };
+    return { 
+      message: 'Login successful',
+      result: {
+        token: jwt,
+        user: user,
+      }
+     };
   }
 
   async verifyJwt(jwt: string): Promise<{ user: UserEntity; exp: number }> {
     if (!jwt) {
-      throw new UnauthorizedException();
+      throw new RpcException({
+        message: 'Invalid token',
+        statusCode: 401,
+      });
     }
 
     try {
       const { user, exp } = await this.jwtService.verifyAsync(jwt);
       return { user, exp };
     } catch (error) {
-      throw new UnauthorizedException();
+      throw new RpcException({
+        message: 'Invalid token',
+        statusCode: 401,
+      });
     }
   }
 
@@ -158,7 +215,10 @@ export class AuthService {
     try {
       return this.jwtService.decode(jwt) as UserJwt;
     } catch (error) {
-      throw new BadRequestException();
+      throw new RpcException({
+        message: 'Invalid token',
+        statusCode: 401,
+      });
     }
   }
 }
