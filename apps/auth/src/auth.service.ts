@@ -18,6 +18,7 @@ import { crypt, decrypt } from './auth.utils';
 
 import { ExistingUserDTO } from './dtos/existing-user.dto';
 import { NewUserDTO } from './dtos/new-user.dto';
+import { GoogleAuthDTO } from './dtos/google-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -81,7 +82,7 @@ export class AuthService {
   }
 
   async register(newUser: Readonly<NewUserDTO>) {
-    const { name, email, password, phone } = newUser;
+    const { name, email, password, phone, provider, providerId } = newUser;
 
     const existingUser = await this.findByEmail(email);
 
@@ -93,14 +94,15 @@ export class AuthService {
     }
 
     const id = uuid();
-    const hashedPassword = await this.hashPassword(password);
+    const hashedPassword = password ? await this.hashPassword(password) : null;
 
     const savedUser = await this.usersRepository.save({
       id: id,
       name,
-      phone,
+      phone: phone || null,
       email,
       password: hashedPassword,
+      isActive: provider && providerId ? true : false,
     });
 
     if (!savedUser) {
@@ -122,7 +124,10 @@ export class AuthService {
 
     return {
       message: 'User created',
-      result: savedUser,
+      result: {
+        token: jwt,
+        user: savedUser,
+      },
     };
   }
 
@@ -181,13 +186,37 @@ export class AuthService {
 
     const jwt = await this.jwtService.signAsync({ user });
 
-    return { 
+    return {
       message: 'Login successful',
       result: {
         token: jwt,
         user: user,
       }
-     };
+    };
+  }
+
+  async loginGoogle(googleData: Readonly<GoogleAuthDTO>) {
+
+    if (!googleData) throw new RpcException({
+      message: 'Invalid google data',
+      statusCode: 401,
+    });
+
+    const userExists = await this.findByEmail(googleData.email);
+
+    if (!userExists) {
+      return this.register(googleData);
+    }
+
+    delete userExists.password;
+    const jwt = await this.jwtService.signAsync({ user: userExists });
+    return {
+      message: 'Login successful',
+      result: {
+        token: jwt,
+        user: userExists,
+      }
+    }
   }
 
   async verifyJwt(jwt: string): Promise<{ user: UserEntity; exp: number }> {

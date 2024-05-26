@@ -1,6 +1,8 @@
 export class NewUserDTO {
-    name: string;
-    email: string;
-    password: string;
-    phone: string;
-  }
+  provider: string;
+  providerId: string;
+  name: string;
+  email: string;
+  password?: string;
+  phone?: string;
+}

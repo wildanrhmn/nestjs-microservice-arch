@@ -5,8 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SharedModule, PostgresDBModule, UserEntity, SharedService } from '@app/shared';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtGuard } from './jwt.guard';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy, JwtGuard, GoogleStrategy } from '@app/shared';
 @Module({
   imports: [
     JwtModule.registerAsync({
@@ -27,6 +26,7 @@ import { JwtStrategy } from './jwt.strategy';
   providers: [
     JwtGuard,
     JwtStrategy,
+    GoogleStrategy,
     AuthService,
     SharedService,
   ],

@@ -1,19 +1,16 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Inject,
-  Param,
   Post,
   Query,
   Req,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { AuthGuard, UserInterceptor, UserRequest } from '@app/shared';
+import { AuthGuard, GoogleOauthGuard } from '@app/shared';
 
 @Controller()
 export class AppController {
@@ -21,6 +18,7 @@ export class AppController {
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
   ) { }
 
+  @UseGuards(AuthGuard)
   @Get('')
   async hello() {
     return 'Welcome to chativo-api!';
@@ -73,12 +71,27 @@ export class AppController {
   ) {
     return this.authService.send(
       {
-        cmd: 'login',
+        cmd: 'login-email',
       },
       {
         email,
         password,
       },
     );
+  }
+
+  @Get('auth/google')
+  @UseGuards(GoogleOauthGuard)
+  async googleAuth() {}
+
+  @Get('auth/google/callback')
+  @UseGuards(GoogleOauthGuard)
+  async googleAuthRedirect(@Req() req) {
+    return this.authService.send(
+      {
+        cmd: 'login-google',
+      },
+      req.user
+    )
   }
 }

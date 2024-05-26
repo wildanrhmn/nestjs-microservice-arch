@@ -12,10 +12,14 @@ export class UserEntity {
     @Column()
     email: string;
 
-    @Column()
+    @Column({
+        nullable: true,
+    })
     password: string;
 
-    @Column()
+    @Column({
+        nullable: true,
+    })
     phone: string;
 
     @Column({ default: false })

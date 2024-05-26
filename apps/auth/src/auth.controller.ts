@@ -12,7 +12,8 @@ import { SharedService } from '@app/shared';
 import { AuthService } from './auth.service';
 import { NewUserDTO } from './dtos/new-user.dto';
 import { ExistingUserDTO } from './dtos/existing-user.dto';
-import { JwtGuard } from './jwt.guard';
+import { GoogleAuthDTO } from './dtos/google-auth.dto';
+import { JwtGuard } from '@app/shared';
 
 
 @Controller()
@@ -51,7 +52,7 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
-  @MessagePattern({ cmd: 'login' })
+  @MessagePattern({ cmd: 'login-email' })
   async login(
     @Ctx() context: RmqContext,
     @Payload() existingUser: ExistingUserDTO,
@@ -59,6 +60,15 @@ export class AuthController {
     this.sharedService.acknowledgeMessage(context);
 
     return this.authService.login(existingUser);
+  }
+
+  @MessagePattern({ cmd: 'login-google' })
+  async loginGoogle(
+    @Ctx() context: RmqContext,
+    @Payload() googleAuth: GoogleAuthDTO,
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.loginGoogle(googleAuth);
   }
 
   @MessagePattern({ cmd: 'verify-jwt' })

@@ -42,8 +42,8 @@ services:
       - rabbitmq
       - auth
     volumes:
-      - .:/usr/src/app # any change to base folder should be reflected
-      - /usr/src/app/node_modules
+      - .:/usr/src/app
+      - /usr/src/app/node_modules # persist node_modules
     command: npm run start:dev api    
 
   mailer:
@@ -56,8 +56,8 @@ services:
       - rabbitmq
       # - postgres
     volumes:
-      - .:/usr/src/app # any change to base folder should be reflected
-      - /usr/src/app/node_modules
+      - .:/usr/src/app
+      - /usr/src/app/node_modules # persist node_modules
     command: npm run start:dev mailer # overrides CMD from dockerfile
 
   auth:
@@ -71,6 +71,6 @@ services:
       - mailer
       # - postgres
     volumes:
-      - .:/usr/src/app # any change to base folder should be reflected
-      - /usr/src/app/node_modules
+      - .:/usr/src/app
+      - /usr/src/app/node_modules # persist node_modules
     command: npm run start:dev auth # overrides CMD from dockerfile
