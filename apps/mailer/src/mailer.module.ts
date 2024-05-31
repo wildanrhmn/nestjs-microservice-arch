@@ -2,10 +2,9 @@ import { Module } from '@nestjs/common';
 import { MailerController } from './mailer.controller';
 import { MailService } from './mailer.service';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'; 
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
-
 import { SharedModule, SharedService } from '@app/shared';
 @Module({
   imports: [
@@ -25,12 +24,12 @@ import { SharedModule, SharedService } from '@app/shared';
           from: configService.get('SMTP_FROM'),
         },
         template: {
-          dir:join(__dirname, 'templates'),
+          dir: join(__dirname, 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
           },
-      },
+        },
       }),
     }),
     SharedModule
@@ -47,4 +46,4 @@ import { SharedModule, SharedService } from '@app/shared';
     },
   ],
 })
-export class MailModule {}
+export class MailModule { }

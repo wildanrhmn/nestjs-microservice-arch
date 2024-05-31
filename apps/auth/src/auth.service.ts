@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   UserEntity,
   UserJwt,
+  TokenResetEntity
 } from '@app/shared';
 
 import { crypt, decrypt } from './auth.utils';
@@ -25,6 +26,8 @@ export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(TokenResetEntity)
+    private readonly tokenResetRepository: Repository<TokenResetEntity>,
     @Inject('MAIL_SERVICE')
     private readonly mailerService: ClientProxy,
 
@@ -112,6 +115,14 @@ export class AuthService {
       });
     }
     delete savedUser.password;
+
+    await this.tokenResetRepository.save({
+      userId: savedUser.id,
+      resetToken: null,
+      createdAt: null,
+      expiredAt: null,
+    })
+
     const jwt = await this.jwtService.signAsync({ user: savedUser });
     this.mailerService.send({
       cmd: 'send-email'
@@ -249,5 +260,34 @@ export class AuthService {
         statusCode: 401,
       });
     }
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.findByEmail(email);
+
+    if (!user) throw new RpcException({
+      message: 'Invalid email',
+      statusCode: 401
+    });
+
+    const code = Math.floor(Math.random() * 9000) + 1000;
+
+    await this.tokenResetRepository.update(user.id, {
+      resetToken: code,
+      createdAt: new Date(),
+      expiredAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    this.mailerService.send({
+      cmd: 'send-verification-code'
+    }, {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      code: code
+    }).subscribe();
+     return {
+       message: 'Code sent!'
+     }
   }
 }

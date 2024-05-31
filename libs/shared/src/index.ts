@@ -14,6 +14,7 @@ export * from './guards/google-oauth.strategy';
 
 // entities
 export * from './entities/user.entities';
+export * from './entities/tokenreset.entities';
 
 // interfaces - user/shared
 export * from './interfaces/user-request.interface';

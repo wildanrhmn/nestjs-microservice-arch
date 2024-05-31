@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
+import { AuthController, AppController, UserController } from './controllers';
 import { SharedModule } from '@app/shared';
 import { GoogleStrategy } from '@app/shared';
 @Module({
@@ -7,6 +7,10 @@ import { GoogleStrategy } from '@app/shared';
     SharedModule.registerRmq('AUTH_SERVICE', process.env.RABBITMQ_AUTH_QUEUE)
   ],
   providers: [GoogleStrategy],
-  controllers: [AppController],
+  controllers: [
+    AuthController,
+    AppController,
+    UserController
+  ],
 })
 export class AppModule {}

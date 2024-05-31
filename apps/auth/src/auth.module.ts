@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { SharedModule, PostgresDBModule, UserEntity, SharedService } from '@app/shared';
+import { SharedModule, PostgresDBModule, UserEntity, TokenResetEntity, SharedService } from '@app/shared';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtStrategy, JwtGuard, GoogleStrategy } from '@app/shared';
 @Module({
@@ -19,7 +19,7 @@ import { JwtStrategy, JwtGuard, GoogleStrategy } from '@app/shared';
     PostgresDBModule,
 
     TypeOrmModule.forFeature([
-      UserEntity,
+      UserEntity, TokenResetEntity
     ]),
   ],
   controllers: [AuthController],

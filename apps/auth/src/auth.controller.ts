@@ -91,4 +91,12 @@ export class AuthController {
 
     return this.authService.getUserFromHeader(payload.jwt);
   }
+
+  @MessagePattern({ cmd: 'forgot-password' })
+  async forgotPassword(@Ctx() context: RmqContext, @Payload() email: string) {
+    this.sharedService.acknowledgeMessage(context)
+    ;
+    return this.authService.forgotPassword(email);
+  }
+  
 }
