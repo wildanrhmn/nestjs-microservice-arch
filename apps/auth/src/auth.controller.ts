@@ -21,7 +21,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly sharedService: SharedService,
-  ) {}
+  ) { }
 
   @MessagePattern({ cmd: 'get-users' })
   async getUsers(@Ctx() context: RmqContext) {
@@ -95,8 +95,13 @@ export class AuthController {
   @MessagePattern({ cmd: 'forgot-password' })
   async forgotPassword(@Ctx() context: RmqContext, @Payload() email: string) {
     this.sharedService.acknowledgeMessage(context)
-    ;
+      ;
     return this.authService.forgotPassword(email);
   }
-  
+
+  @MessagePattern({ cmd: 'verify-forgot-password' })
+  async verifyForgotPassword(@Ctx() context: RmqContext, @Payload() { code, userId }: { code: number, userId: string }) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.verifyForgotPassword(code, userId);
+  }
 }

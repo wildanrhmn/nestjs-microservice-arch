@@ -88,5 +88,19 @@ import {
         email
       )
     }
+
+    @Post('verify-forgot-password')
+    async verifyForgotPassword(
+      @Body('code') code: number,
+      @Body('userId') userId: string
+    ) {
+      return this.authService.send(
+        { cmd: 'verify-forgot-password' },
+        {
+          code,
+          userId
+        }
+      )
+    }
   }
   

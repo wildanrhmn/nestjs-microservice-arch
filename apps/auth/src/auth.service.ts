@@ -118,10 +118,11 @@ export class AuthService {
 
     await this.tokenResetRepository.save({
       userId: savedUser.id,
+      user: savedUser,
       resetToken: null,
       createdAt: null,
       expiredAt: null,
-    })
+    });
 
     const jwt = await this.jwtService.signAsync({ user: savedUser });
     this.mailerService.send({
@@ -230,6 +231,58 @@ export class AuthService {
     }
   }
 
+  async forgotPassword(email: string) {
+    const user = await this.findByEmail(email);
+
+    if (!user) throw new RpcException({
+      message: 'Cannot find user.',
+      statusCode: 401
+    });
+
+    const code = Math.floor(Math.random() * 9000) + 1000;
+
+    await this.tokenResetRepository.update(user.id, {
+      resetToken: code,
+      createdAt: new Date(),
+      expiredAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    this.mailerService.send({
+      cmd: 'send-verification-code'
+    }, {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      code: code
+    }).subscribe();
+    return {
+      message: 'Code sent!'
+    }
+  }
+
+  async verifyForgotPassword(code: number, userId: string) {
+    const tokenReset = await this.tokenResetRepository.findOne({ 
+      where: { 
+        resetToken: code,
+        user: { id: userId }
+      } 
+    });
+
+    if (!tokenReset) throw new RpcException({
+      message: 'Invalid code or user mismatch',
+      statusCode: 401,
+    });
+
+    if (tokenReset.expiredAt < new Date()) throw new RpcException({
+      message: 'Code expired, try again.',
+      statusCode: 401,
+    });
+
+    return {
+      message: 'Code verified',
+    };
+  }
+
   async verifyJwt(jwt: string): Promise<{ user: UserEntity; exp: number }> {
     if (!jwt) {
       throw new RpcException({
@@ -260,34 +313,5 @@ export class AuthService {
         statusCode: 401,
       });
     }
-  }
-
-  async forgotPassword(email: string) {
-    const user = await this.findByEmail(email);
-
-    if (!user) throw new RpcException({
-      message: 'Invalid email',
-      statusCode: 401
-    });
-
-    const code = Math.floor(Math.random() * 9000) + 1000;
-
-    await this.tokenResetRepository.update(user.id, {
-      resetToken: code,
-      createdAt: new Date(),
-      expiredAt: new Date(Date.now() + 5 * 60 * 1000),
-    });
-
-    this.mailerService.send({
-      cmd: 'send-verification-code'
-    }, {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      code: code
-    }).subscribe();
-     return {
-       message: 'Code sent!'
-     }
   }
 }
