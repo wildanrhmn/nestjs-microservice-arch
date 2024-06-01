@@ -261,11 +261,11 @@ export class AuthService {
   }
 
   async verifyForgotPassword(code: number, userId: string) {
-    const tokenReset = await this.tokenResetRepository.findOne({ 
-      where: { 
+    const tokenReset = await this.tokenResetRepository.findOne({
+      where: {
         resetToken: code,
         user: { id: userId }
-      } 
+      }
     });
 
     if (!tokenReset) throw new RpcException({
@@ -280,6 +280,21 @@ export class AuthService {
 
     return {
       message: 'Code verified',
+    };
+  }
+
+  async resetPassword(newPassword: string, userId: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new RpcException({
+      message: 'User not found',
+      statusCode: 404,
+    });
+
+    const hashedPassword = await this.hashPassword(newPassword);
+    await this.usersRepository.update(user.id, { password: hashedPassword });
+
+    return {
+      message: 'Password reset successful',
     };
   }
 
