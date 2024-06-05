@@ -17,9 +17,7 @@ import {
 
 import { crypt, decrypt } from './auth.utils';
 
-import { ExistingUserDTO } from './dtos/existing-user.dto';
-import { NewUserDTO } from './dtos/new-user.dto';
-import { GoogleAuthDTO } from './dtos/google-auth.dto';
+import { ExistingUserDTO, NewUserDTO, ChangePasswordDto, GoogleAuthDTO } from './dtos';
 
 @Injectable()
 export class AuthService {
@@ -229,6 +227,29 @@ export class AuthService {
         user: userExists,
       }
     }
+  }
+
+  async changePassword(changePasswordDto: ChangePasswordDto) {
+    const { oldPassword, newPassword, userId } = changePasswordDto;
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+
+    if (!user) throw new RpcException({
+      message: 'User not found',
+      statusCode: 404,
+    });
+
+    const doesPasswordMatch = await this.doesPasswordMatch(oldPassword, user.password);
+    if (!doesPasswordMatch) throw new RpcException({
+      message: 'Invalid password',
+      statusCode: 401,
+    });
+
+    const hashedPassword = await this.hashPassword(newPassword);
+    await this.usersRepository.update(user.id, { password: hashedPassword });
+
+    return {
+      message: 'Password changed',
+    };
   }
 
   async forgotPassword(email: string) {

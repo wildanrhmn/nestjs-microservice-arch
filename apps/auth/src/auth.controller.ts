@@ -4,17 +4,13 @@ import {
   MessagePattern,
   Payload,
   RmqContext,
-  ClientProxy
 } from '@nestjs/microservices';
 
 import { SharedService } from '@app/shared';
 
 import { AuthService } from './auth.service';
-import { NewUserDTO } from './dtos/new-user.dto';
-import { ExistingUserDTO } from './dtos/existing-user.dto';
-import { GoogleAuthDTO } from './dtos/google-auth.dto';
+import { ExistingUserDTO, NewUserDTO, ChangePasswordDto, GoogleAuthDTO } from './dtos';
 import { JwtGuard } from '@app/shared';
-
 
 @Controller()
 export class AuthController {
@@ -92,6 +88,12 @@ export class AuthController {
     return this.authService.getUserFromHeader(payload.jwt);
   }
 
+  @MessagePattern({ cmd: 'change-password' })
+  async changePassword(@Ctx() context: RmqContext, @Payload() changePasswordDto: ChangePasswordDto) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.changePassword(changePasswordDto);
+  }
+
   @MessagePattern({ cmd: 'forgot-password' })
   async forgotPassword(@Ctx() context: RmqContext, @Payload() email: string) {
     this.sharedService.acknowledgeMessage(context)
@@ -103,5 +105,11 @@ export class AuthController {
   async verifyForgotPassword(@Ctx() context: RmqContext, @Payload() { code, userId }: { code: number, userId: string }) {
     this.sharedService.acknowledgeMessage(context);
     return this.authService.verifyForgotPassword(code, userId);
+  }
+
+  @MessagePattern({ cmd: 'reset-password' })
+  async resetPassword(@Ctx() context: RmqContext, @Payload() { newPassword, userId }: { newPassword: string, userId: string }) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.resetPassword(newPassword, userId);
   }
 }

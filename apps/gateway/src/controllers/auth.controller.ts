@@ -89,12 +89,11 @@ export class AuthController {
     @Body('newPassword') newPassword: string,
     @Req() req: UserRequest
   ) {
-    console.info(req)
-    return {
-      result: {
-        user: "test"
-      }
-    }
+    return this.authService.send({ cmd: 'change-password' }, {
+      oldPassword,
+      newPassword,
+      userId: req.user.id
+    })
   }
 
   @Post('forgot-password')
