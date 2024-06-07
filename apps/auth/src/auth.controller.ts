@@ -29,17 +29,32 @@ export class AuthController {
   @MessagePattern({ cmd: 'get-user' })
   async getUserById(
     @Ctx() context: RmqContext,
-    @Payload() user: { id: string },
+    @Payload() id: string,
   ) {
     this.sharedService.acknowledgeMessage(context);
 
-    return this.authService.getUserById(user.id);
+    return this.authService.getUserById(id);
   }
 
   @MessagePattern({ cmd: 'register' })
   async register(@Ctx() context: RmqContext, @Payload() newUser: NewUserDTO) {
     this.sharedService.acknowledgeMessage(context);
     return this.authService.register(newUser);
+  }
+
+  @MessagePattern({ cmd: 'update-profile' })
+  async updateProfile(
+    @Ctx() context: RmqContext,
+    @Payload() body: NewUserDTO,
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.updateProfile(body);
+  }
+
+  @MessagePattern({ cmd: 'delete-user' })
+  async deleteUser(@Ctx() context: RmqContext, @Payload() id: string) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.deleteUser(id);
   }
 
   @MessagePattern({ cmd: 'verify-email' })

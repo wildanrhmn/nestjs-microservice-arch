@@ -148,6 +148,29 @@ export class AuthService {
     return password === decrypt(hashedPassword);
   }
 
+  async updateProfile(userData: Readonly<NewUserDTO>) {
+    const { id, name, email, password, phone } = userData;
+    const hashedPassword = password ? await this.hashPassword(password) : null;
+
+    await this.usersRepository.update(id, {
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+    });
+
+    return {
+      message: 'Profile updated.',
+    };
+  }
+
+  async deleteUser(id: string) {
+    await this.usersRepository.delete(id);
+    return {
+      message: 'User deleted.',
+    };
+  }
+
   async validateUser(email: string, password: string) {
     const user = await this.findByEmail(email);
 
